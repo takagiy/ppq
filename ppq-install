@@ -1,0 +1,14 @@
+#!/bin/sh
+
+dest=
+
+while [ $# -ne 0 ]
+do
+  case "$1" in
+    -d | --dest) shift;dest="$1";;
+    *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
+  esac
+  shift
+done
+
+ppq-build && DESTDIR="$dest" cmake --install build
