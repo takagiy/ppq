@@ -34,7 +34,9 @@ echo "Creating project '$projname'..." 1>&2
   echo "project($projname VERSION 0.1.0 LANGUAGES CXX)"
   echo ""
   echo "add_library($projname)"
-  echo "target_include_directories($projname PUBLIC src)"
+  echo "target_include_directories($projname PUBLIC"
+  echo "    \$<BUILD_INTERFACE:\${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  echo "    \$<INSTALL_INTERFACE:include>)"
   echo "target_sources($projname PRIVATE"
   echo "    src/$projname/lib.cpp)"
   echo ""
@@ -43,9 +45,31 @@ echo "Creating project '$projname'..." 1>&2
   echo "    PROPERTIES OUTPUT_NAME $projname)"
   echo "target_link_libraries(${projname}-bin"
   echo "    $projname)"
+  echo ""
+  echo "install(TARGETS $projname ${projname}-bin"
+  echo "    EXPORT ${projname}-config"
+  echo "    ARCHIVE DESTINATION lib"
+  echo "    LIBRARY DESTINATION lib"
+  echo "    RUNTIME DESTINATION bin)"
+  echo ""
+  echo "install(EXPORT ${projname}-config"
+  echo "    NAMESPACE ${projname}"
+  echo "    DESTINATION lib/cmake/$projname)"
+  echo ""
+  echo "include(CMakePackageConfigHelpers)"
+  echo ""
+  echo "write_basic_package_version_file("
+  echo "    \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
+  echo "    COMPATIBILITY SameMajorVersion)"
+  echo ""
+  echo "install(FILES \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
+  echo "    DESTINATION lib/cmake/$projname)"
+  echo "install(DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR}/include/"
+  echo "    DESTINATION include)"
 } > CMakeLists.txt
 
 mkdir -p src/"$projname"
+mkdir -p include/"$projname"
 
 {
   echo "#include <$projname/lib.hpp>"
@@ -63,7 +87,7 @@ mkdir -p src/"$projname"
   echo "auto hello() -> void;"
   echo "}"
   echo "#endif"
-} > src/"$projname"/lib.hpp
+} > include/"$projname"/lib.hpp
 
 {
   echo "#include <$projname/lib.hpp>"
