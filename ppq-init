@@ -22,6 +22,13 @@ projname=${1:-$(printf "project name:\n-> " 1>&2; read -r tmp; echo "$tmp")}
 echo "Creating project '$projname'..." 1>&2
 
 {
+  echo "name=$projname"
+  echo "version=0.1.0"
+  echo "bin=$projname"
+  echo "lib=$projname"
+} > package.ppq
+
+{
   echo "cmake_minimum_required(VERSION 3.1)"
   echo ""
   echo "project($projname VERSION 0.1.0 LANGUAGES CXX)"

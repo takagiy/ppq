@@ -1,0 +1,10 @@
+#!/bin/sh
+
+while IFS="=" read -r key value
+do
+  case "$key" in
+    bin) bin="$value"; break;;
+  esac
+done < package.ppq
+
+ppq-build && build/"$bin"
