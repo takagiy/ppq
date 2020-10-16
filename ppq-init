@@ -1,0 +1,70 @@
+#!/bin/sh
+
+force=
+
+while :
+do
+  case "$1" in
+    -f | --force) force=1;;
+    -*) "error: Unkown option '$1'";;
+    *) break;;
+  esac
+  shift
+done
+
+{
+  [ -z "$force" ] && [ -f CMakeLists.txt ] \
+    echo "error: File 'CMakeLists.txt' already exists" && exit 1
+} 1>&2
+
+projname=${1:-$(printf "project name:\n-> " 1>&2; read -r tmp; echo "$tmp")}
+
+{
+  echo "cmake_minimum_required(VERSION 3.1)"
+  echo ""
+  echo "project($projname VERSION 0.1.0 LANGUAGES CXX)"
+  echo ""
+  echo "add_library($projname)"
+  echo "target_include_directories($projname PUBLIC src)"
+  echo "target_sources($projname PRIVATE"
+  echo "    src/$projname/lib.cpp)"
+  echo ""
+  echo "add_executable(${projname}-bin src/main.cpp)"
+  echo "set_target_properties(${projname}-bin"
+  echo "    PROPERTIES OUTPUT_NAME $projname)"
+  echo "target_link_libraries(${projname}-bin"
+  echo "    $projname)"
+} > CMakeLists.txt
+
+mkdir -p src/"$projname"
+
+{
+  echo "#include <$projname/lib.hpp>"
+  echo ""
+  echo "int main() {"
+  echo "  $projname::hello();"
+  echo "}"
+} > src/main.cpp
+
+{
+  echo "#ifndef $(echo "$projname" | tr '[:lower:]' '[:upper:]')_LIB"
+  echo "#define $(echo "$projname" | tr '[:lower:]' '[:upper:]')_LIB"
+  echo ""
+  echo "namespace $projname {"
+  echo "auto hello() -> void;"
+  echo "}"
+  echo "#endif"
+} > src/"$projname"/lib.hpp
+
+{
+  echo "#include <$projname/lib.hpp>"
+  echo "#include <cstdio>"
+  echo ""
+  echo "namespace $projname {"
+  echo "auto hello() -> void {"
+  echo "  std::puts(\"Hello, $projname.\");"
+  echo "}"
+  echo "}"
+} > src/"$projname"/lib.cpp
+
+cmake --build build

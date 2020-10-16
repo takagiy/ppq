@@ -1,0 +1,4 @@
+#!/bin/sh
+
+subcmd=${1:-help};shift
+ppq-"$subcmd" $*
