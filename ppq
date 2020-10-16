@@ -2,4 +2,4 @@
 
 subcmd=${1:-help}
 [ $# -ne 0 ] && shift
-ppq-"$subcmd" $*
+ppq-"$subcmd" "$@"
