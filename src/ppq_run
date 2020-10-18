@@ -7,4 +7,4 @@ do
   esac
 done < package.ppq
 
-ppq-build && build/"$bin"
+ppq_build && build/"$bin"

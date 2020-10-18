@@ -11,4 +11,4 @@ do
   shift
 done
 
-ppq-build && DESTDIR="$dest" cmake --install build
+ppq_build && DESTDIR="$dest" cmake --install build

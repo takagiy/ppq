@@ -1,0 +1,153 @@
+#!/bin/sh
+ppq_install()
+{
+#!/bin/sh
+
+dest=
+
+while [ $# -ne 0 ]
+do
+  case "$1" in
+    -d | --dest) shift;dest="$1";;
+    *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
+  esac
+  shift
+done
+
+ppq_build && DESTDIR="$dest" cmake --install build
+}
+ppq_run()
+{
+#!/bin/sh
+
+while IFS="=" read -r key value
+do
+  case "$key" in
+    bin) bin="$value"; break;;
+  esac
+done < package.ppq
+
+ppq_build && build/"$bin"
+}
+ppq_help()
+{
+#!/bin/sh
+:
+}
+ppq_init()
+{
+#!/bin/sh
+
+force=
+
+while :
+do
+  case "$1" in
+    -f | --force) force=1;;
+    -*) "error: Unkown option '$1'";;
+    *) break;;
+  esac
+  shift
+done
+
+{
+  [ -z "$force" ] && [ -f CMakeLists.txt ] &&\
+    echo "error: File 'CMakeLists.txt' already exists" && exit 1
+} 1>&2
+
+projname=${1:-$(printf "project name:\n-> " 1>&2; read -r tmp; echo "$tmp")}
+
+echo "Creating project '$projname'..." 1>&2
+
+{
+  echo "name=$projname"
+  echo "version=0.1.0"
+  echo "bin=$projname"
+  echo "lib=$projname"
+} > package.ppq
+
+{
+  echo "cmake_minimum_required(VERSION 3.1)"
+  echo ""
+  echo "project($projname VERSION 0.1.0 LANGUAGES CXX)"
+  echo ""
+  echo "add_library($projname)"
+  echo "target_include_directories($projname PUBLIC"
+  echo "    \$<BUILD_INTERFACE:\${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  echo "    \$<INSTALL_INTERFACE:include>)"
+  echo "target_sources($projname PRIVATE"
+  echo "    src/$projname/lib.cpp)"
+  echo ""
+  echo "add_executable(${projname}-bin src/main.cpp)"
+  echo "set_target_properties(${projname}-bin"
+  echo "    PROPERTIES OUTPUT_NAME $projname)"
+  echo "target_link_libraries(${projname}-bin"
+  echo "    $projname)"
+  echo ""
+  echo "install(TARGETS $projname ${projname}-bin"
+  echo "    EXPORT ${projname}-config"
+  echo "    ARCHIVE DESTINATION lib"
+  echo "    LIBRARY DESTINATION lib"
+  echo "    RUNTIME DESTINATION bin)"
+  echo ""
+  echo "install(EXPORT ${projname}-config"
+  echo "    NAMESPACE ${projname}"
+  echo "    DESTINATION lib/cmake/$projname)"
+  echo ""
+  echo "include(CMakePackageConfigHelpers)"
+  echo ""
+  echo "write_basic_package_version_file("
+  echo "    \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
+  echo "    COMPATIBILITY SameMajorVersion)"
+  echo ""
+  echo "install(FILES \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
+  echo "    DESTINATION lib/cmake/$projname)"
+  echo "install(DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR}/include/"
+  echo "    DESTINATION include)"
+} > CMakeLists.txt
+
+mkdir -p src/"$projname"
+mkdir -p include/"$projname"
+
+{
+  echo "#include <$projname/lib.hpp>"
+  echo ""
+  echo "int main() {"
+  echo "  $projname::hello();"
+  echo "}"
+} > src/main.cpp
+
+{
+  echo "#ifndef $(echo "$projname" | tr '[:lower:]' '[:upper:]')_LIB"
+  echo "#define $(echo "$projname" | tr '[:lower:]' '[:upper:]')_LIB"
+  echo ""
+  echo "namespace $projname {"
+  echo "auto hello() -> void;"
+  echo "}"
+  echo "#endif"
+} > include/"$projname"/lib.hpp
+
+{
+  echo "#include <$projname/lib.hpp>"
+  echo "#include <cstdio>"
+  echo ""
+  echo "namespace $projname {"
+  echo "auto hello() -> void {"
+  echo "  std::puts(\"Hello, $projname.\");"
+  echo "}"
+  echo "}"
+} > src/"$projname"/lib.cpp
+
+mkdir -p build && cmake -S . -B build
+}
+ppq_build()
+{
+#!/bin/sh
+
+mkdir -p build && cmake -S . -B build && cmake --build build
+}
+#!/bin/sh
+
+subcmd=${1:-help}
+[ $# -ne 0 ] && shift
+ppq_"$subcmd" "$@"
