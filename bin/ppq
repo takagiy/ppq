@@ -23,11 +23,18 @@ ppq_run()
 while IFS="=" read -r key value
 do
   case "$key" in
-    bin) bin="$value"; break;;
+    name) name="$value";;
+    bin) bin="$value";;
   esac
 done < package.ppq
 
-ppq_build && build/"$bin"
+ppq_build --target "${name}-bin" && build/"$bin"
+}
+ppq_test()
+{
+#!/bin/sh
+
+ppq_build --target test
 }
 ppq_help()
 {
@@ -104,8 +111,16 @@ echo "Creating project '$projname'..." 1>&2
   echo "    DESTINATION lib/cmake/$projname)"
   echo "install(DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR}/include/"
   echo "    DESTINATION include)"
+  echo ""
+  echo "if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)"
+  echo "    include(CTest)"
+  echo "    if(BUILD_TESTING)"
+  echo "        add_subdirectory(test)"
+  echo "    endif()"
+  echo "endif()"
 } > CMakeLists.txt
 
+mkdir -p test
 mkdir -p src/"$projname"
 mkdir -p include/"$projname"
 
@@ -138,13 +153,28 @@ mkdir -p include/"$projname"
   echo "}"
 } > src/"$projname"/lib.cpp
 
+{
+  echo "add_test(NAME main COMMAND ${projname}-bin)"
+} > test/CMakeLists.txt
+
 mkdir -p build && cmake -S . -B build
 }
 ppq_build()
 {
 #!/bin/sh
 
-mkdir -p build && cmake -S . -B build && cmake --build build
+target=all
+
+while [ $# -ne 0 ]
+do
+  case "$1" in
+    -t | --target) shift;target="$1";;
+    *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
+  esac
+  shift
+done
+
+mkdir -p build && cmake -S . -B build && cmake --build build --target "$target"
 }
 #!/bin/sh
 

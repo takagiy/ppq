@@ -3,8 +3,9 @@
 while IFS="=" read -r key value
 do
   case "$key" in
-    bin) bin="$value"; break;;
+    name) name="$value";;
+    bin) bin="$value";;
   esac
 done < package.ppq
 
-ppq_build && build/"$bin"
+ppq_build --target "${name}-bin" && build/"$bin"

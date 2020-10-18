@@ -1,3 +1,14 @@
 #!/bin/sh
 
-mkdir -p build && cmake -S . -B build && cmake --build build
+target=all
+
+while [ $# -ne 0 ]
+do
+  case "$1" in
+    -t | --target) shift;target="$1";;
+    *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
+  esac
+  shift
+done
+
+mkdir -p build && cmake -S . -B build && cmake --build build --target "$target"
