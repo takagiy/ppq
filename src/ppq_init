@@ -109,7 +109,30 @@ mkdir -p include/"$projname"
 } > src/"$projname"/lib.cpp
 
 {
-  echo "add_test(NAME main COMMAND ${projname}-bin)"
+  echo "#include <cassert>"
+  echo ""
+  echo "int main() {"
+  echo "  static_assert(1 + 1 == 2);"
+  echo "  assert(1 + 1 == 2);"
+  echo "}"
+} > test/test.cpp
+
+{
+  echo "function(add_unit_test source_file)"
+  echo "  string(REPLACE \"/\" \".\" test_binary \"\${source_file}\")"
+  echo ""
+  echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
+  echo "  add_test([build]\${source_file}"
+  echo "    \${CMAKE_COMMAND} --build \${CMAKE_BINARY_DIR} --target \${test_binary})"
+  echo ""
+  echo "  add_test(NAME \${source_file} COMMAND \${test_binary})"
+  echo "  set_tests_properties(\${source_file} PROPERTIES DEPENDS [build]\${test_binary})"
+  echo "endfunction()"
+  echo ""
+  for src in $(find test -type f -name '*.cpp' | sed -e 's/^test\///')
+  do
+    echo "add_unit_test($src)"
+  done
 } > test/CMakeLists.txt
 
 mkdir -p build && cmake -S . -B build
