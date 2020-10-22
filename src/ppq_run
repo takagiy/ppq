@@ -1,7 +1,5 @@
 #!/bin/sh
 
-config__package__name=
-config__package__bin=
 {
   ppq_parse package__bin
   [ -z "$config__package__name" ] && ppq_parse package__name

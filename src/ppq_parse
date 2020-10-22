@@ -1,5 +1,10 @@
 #!/bin/sh
 
+config__package__name=
+config__package__version=
+config__package__bin=
+config__package__lib=
+
 search="config__$1"
 
 current_depth="${current_depth:-0}"

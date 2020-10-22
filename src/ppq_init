@@ -33,53 +33,6 @@ echo "Creating project '$projname'..." 1>&2
   echo "test_framework = cassert"
 } > package.ppq
 
-{
-  echo "cmake_minimum_required(VERSION 3.1)"
-  echo ""
-  echo "project($projname VERSION 0.1.0 LANGUAGES CXX)"
-  echo ""
-  echo "add_library($projname)"
-  echo "target_include_directories($projname PUBLIC"
-  echo "    \$<BUILD_INTERFACE:\${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  echo "    \$<INSTALL_INTERFACE:include>)"
-  echo "target_sources($projname PRIVATE"
-  echo "    src/$projname/lib.cpp)"
-  echo ""
-  echo "add_executable(${projname}-bin src/main.cpp)"
-  echo "set_target_properties(${projname}-bin"
-  echo "    PROPERTIES OUTPUT_NAME $projname)"
-  echo "target_link_libraries(${projname}-bin"
-  echo "    $projname)"
-  echo ""
-  echo "install(TARGETS $projname ${projname}-bin"
-  echo "    EXPORT ${projname}-config"
-  echo "    ARCHIVE DESTINATION lib"
-  echo "    LIBRARY DESTINATION lib"
-  echo "    RUNTIME DESTINATION bin)"
-  echo ""
-  echo "install(EXPORT ${projname}-config"
-  echo "    NAMESPACE ${projname}"
-  echo "    DESTINATION lib/cmake/$projname)"
-  echo ""
-  echo "include(CMakePackageConfigHelpers)"
-  echo ""
-  echo "write_basic_package_version_file("
-  echo "    \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
-  echo "    COMPATIBILITY SameMajorVersion)"
-  echo ""
-  echo "install(FILES \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
-  echo "    DESTINATION lib/cmake/$projname)"
-  echo "install(DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR}/include/"
-  echo "    DESTINATION include)"
-  echo ""
-  echo "if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)"
-  echo "    include(CTest)"
-  echo "    if(BUILD_TESTING)"
-  echo "        add_subdirectory(test)"
-  echo "    endif()"
-  echo "endif()"
-} > CMakeLists.txt
-
 mkdir -p test
 mkdir -p src/"$projname"
 mkdir -p include/"$projname"
@@ -122,26 +75,7 @@ mkdir -p include/"$projname"
   echo "}"
 } > test/test.cpp
 
-{
-  echo "set(${projname}_unit_tests_count 0)"
-  echo ""
-  echo "function(add_unit_test source_file)"
-  echo "  math(EXPR tmp \"\${${projname}_unit_tests_count} + 1\")"
-  echo "  set(${projname}_unit_tests_count \${tmp} PARENT_SCOPE)"
-  echo "  set(test_binary \"${projname}_unit_test\${${projname}_unit_tests_count}\")"
-  echo ""
-  echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
-  echo "  add_test([build]\${source_file}"
-  echo "    \${CMAKE_COMMAND} --build \${CMAKE_BINARY_DIR} --target \${test_binary})"
-  echo ""
-  echo "  add_test(NAME \${source_file} COMMAND \${test_binary})"
-  echo "  set_tests_properties(\${source_file} PROPERTIES DEPENDS [build]\${test_binary})"
-  echo "endfunction()"
-  echo ""
-  for src in $(find test -type f -name '*.cpp' | sed -e 's/^test\///')
-  do
-    echo "add_unit_test($src)"
-  done
-} > test/CMakeLists.txt
+ppq_lists > CMakeLists.txt
+ppq_test_lists > test/CMakeLists.txt
 
 mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+ppq_parse package__name < package.ppq
+
+projname="$config__package__name"
+
+echo "set(${projname}_unit_tests_count 0)"
+echo ""
+echo "function(add_unit_test source_file)"
+echo "  math(EXPR tmp \"\${${projname}_unit_tests_count} + 1\")"
+echo "  set(${projname}_unit_tests_count \${tmp} PARENT_SCOPE)"
+echo "  set(test_binary \"${projname}_unit_test\${${projname}_unit_tests_count}\")"
+echo ""
+echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
+echo "  add_test([build]\${source_file}"
+echo "    \${CMAKE_COMMAND} --build \${CMAKE_BINARY_DIR} --target \${test_binary})"
+echo ""
+echo "  add_test(NAME \${source_file} COMMAND \${test_binary})"
+echo "  set_tests_properties(\${source_file} PROPERTIES DEPENDS [build]\${test_binary})"
+echo "endfunction()"
+echo ""
+for src in $(find test -type f -name '*.cpp' | sed -e 's/^test\///')
+do
+  echo "add_unit_test($src)"
+done
