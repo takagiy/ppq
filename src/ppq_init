@@ -118,8 +118,12 @@ mkdir -p include/"$projname"
 } > test/test.cpp
 
 {
+  echo "set(${projname}_unit_tests_count 0)"
+  echo ""
   echo "function(add_unit_test source_file)"
-  echo "  string(REPLACE \"/\" \".\" test_binary \"\${source_file}\")"
+  echo "  math(EXPR tmp \"\${${projname}_unit_tests_count} + 1\")"
+  echo "  set(${projname}_unit_tests_count \${tmp} PARENT_SCOPE)"
+  echo "  set(test_binary \"${projname}_unit_test\${${projname}_unit_tests_count}\")"
   echo ""
   echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
   echo "  add_test([build]\${source_file}"
