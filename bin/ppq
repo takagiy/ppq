@@ -20,15 +20,50 @@ ppq_run()
 {
 #!/bin/sh
 
-while IFS="=" read -r key value
-do
-  case "$key" in
-    name) name="$value";;
-    bin) bin="$value";;
-  esac
-done < package.ppq
+config__package__name=
+config__package__bin=
+{
+  ppq_parse package__bin
+  [ -z "$config__package__name" ] && ppq_parse package__name
+}< package.ppq2
 
-ppq_build --target "${name}-bin" && build/"$bin"
+ppq_build --target "${config__package__name}-bin" && build/"$config__package__bin"
+}
+ppq_parse()
+{
+#!/bin/sh
+
+search="config__$1"
+
+current_depth="${current_depth:-0}"
+names0=config
+current_name="${current_name:-$names0}"
+
+start_new_obj() {
+  [ "$current_name" = "$search" ] && return 1
+  current_depth=$(expr "  $1" : '[ \t]*')
+  raw_name=$(expr "$1" : '.*\[\(.*\)\]')
+  name=$(echo "$raw_name" | tr -c '[:alnum:]_\n' '_')
+  eval "names$current_depth=\"\${names$(("$current_depth" - 2))}__$name\""
+  current_name=$(eval echo "\"\$names$current_depth\"")
+}
+
+append_field() {
+  name=$(expr "$1" : '\s*\([^ ]*\)\s*=' | tr -c '[:alnum:]_\n' '_')
+  value=$(expr "$1" : '.*=\s*\(.*\)\s*')
+  #echo "${current_name}__$name='$value'"
+  eval "${current_name}__$name='$value'"
+  [ "${current_name}__$name" = "$search" ] && return 1 || return 0
+}
+
+while IFS="" read -r line
+do
+  case "$(expr "$line" : '\s*\(.*\)')" in
+    ''|\#*);;
+    \[*\]) start_new_obj "$line" || break;;
+    *) append_field "$line" || break;;
+  esac
+done
 }
 ppq_test()
 {
@@ -67,10 +102,14 @@ projname=${1:-$(printf "project name:\n-> " 1>&2; read -r tmp; echo "$tmp")}
 echo "Creating project '$projname'..." 1>&2
 
 {
-  echo "name=$projname"
-  echo "version=0.1.0"
-  echo "bin=$projname"
-  echo "lib=$projname"
+  echo "[meta]"
+  echo "config_version = 1"
+  echo ""
+  echo "[package]"
+  echo "name = $projname"
+  echo "version = 0.1.0"
+  echo "bin = $projname"
+  echo "lib = $projname"
 } > package.ppq
 
 {

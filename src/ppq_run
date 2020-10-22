@@ -1,11 +1,10 @@
 #!/bin/sh
 
-while IFS="=" read -r key value
-do
-  case "$key" in
-    name) name="$value";;
-    bin) bin="$value";;
-  esac
-done < package.ppq
+config__package__name=
+config__package__bin=
+{
+  ppq_parse package__bin
+  [ -z "$config__package__name" ] && ppq_parse package__name
+} < package.ppq
 
-ppq_build --target "${name}-bin" && build/"$bin"
+ppq_build --target "${config__package__name}-bin" && build/"$config__package__bin"

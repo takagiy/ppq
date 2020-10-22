@@ -22,10 +22,14 @@ projname=${1:-$(printf "project name:\n-> " 1>&2; read -r tmp; echo "$tmp")}
 echo "Creating project '$projname'..." 1>&2
 
 {
-  echo "name=$projname"
-  echo "version=0.1.0"
-  echo "bin=$projname"
-  echo "lib=$projname"
+  echo "[meta]"
+  echo "config_version = 1"
+  echo ""
+  echo "[package]"
+  echo "name = $projname"
+  echo "version = 0.1.0"
+  echo "bin = $projname"
+  echo "lib = $projname"
 } > package.ppq
 
 {

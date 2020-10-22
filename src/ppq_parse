@@ -1,0 +1,33 @@
+#!/bin/sh
+
+search="config__$1"
+
+current_depth="${current_depth:-0}"
+names0=config
+current_name="${current_name:-$names0}"
+
+start_new_obj() {
+  [ "$current_name" = "$search" ] && return 1
+  current_depth=$(expr "  $1" : '[ \t]*')
+  raw_name=$(expr "$1" : '.*\[\(.*\)\]')
+  name=$(echo "$raw_name" | tr -c '[:alnum:]_\n' '_')
+  eval "names$current_depth=\"\${names$(("$current_depth" - 2))}__$name\""
+  current_name=$(eval echo "\"\$names$current_depth\"")
+}
+
+append_field() {
+  name=$(expr "$1" : '\s*\([^ ]*\)\s*=' | tr -c '[:alnum:]_\n' '_')
+  value=$(expr "$1" : '.*=\s*\(.*\)\s*')
+  #echo "${current_name}__$name='$value'"
+  eval "${current_name}__$name='$value'"
+  [ "${current_name}__$name" = "$search" ] && return 1 || return 0
+}
+
+while IFS="" read -r line
+do
+  case "$(expr "$line" : '\s*\(.*\)')" in
+    ''|\#*);;
+    \[*\]) start_new_obj "$line" || break;;
+    *) append_field "$line" || break;;
+  esac
+done
