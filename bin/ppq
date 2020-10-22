@@ -25,7 +25,7 @@ config__package__bin=
 {
   ppq_parse package__bin
   [ -z "$config__package__name" ] && ppq_parse package__name
-}< package.ppq2
+} < package.ppq
 
 ppq_build --target "${config__package__name}-bin" && build/"$config__package__bin"
 }
@@ -110,6 +110,7 @@ echo "Creating project '$projname'..." 1>&2
   echo "version = 0.1.0"
   echo "bin = $projname"
   echo "lib = $projname"
+  echo "test_framework = cassert"
 } > package.ppq
 
 {

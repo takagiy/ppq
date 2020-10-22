@@ -30,6 +30,7 @@ echo "Creating project '$projname'..." 1>&2
   echo "version = 0.1.0"
   echo "bin = $projname"
   echo "lib = $projname"
+  echo "test_framework = cassert"
 } > package.ppq
 
 {
