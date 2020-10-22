@@ -144,4 +144,4 @@ mkdir -p include/"$projname"
   done
 } > test/CMakeLists.txt
 
-mkdir -p build && cmake -S . -B build
+mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
