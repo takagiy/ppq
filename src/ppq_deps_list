@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ppq_parse < package.ppq | grep '^append #dependencies ' | cut -d' ' -f3 | sed 's/^#dependencies#//'

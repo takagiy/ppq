@@ -70,6 +70,12 @@ ppq_test()
 
 ppq_build --target test
 }
+ppq_deps_list()
+{
+#!/bin/sh
+
+ppq_parse < package.ppq | grep '^append #dependencies ' | cut -d' ' -f3 | sed 's/^#dependencies#//'
+}
 ppq_help()
 {
 #!/bin/sh
