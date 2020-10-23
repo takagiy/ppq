@@ -20,53 +20,49 @@ ppq_run()
 {
 #!/bin/sh
 
-{
-  ppq_parse package__bin
-  [ -z "$config__package__name" ] && ppq_parse package__name
-} < package.ppq
+config="$(ppq_parse < package.ppq)"
+name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
+bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
 
-ppq_build --target "${config__package__name}-bin" && build/"$config__package__bin"
+ppq_build --target "${name}-bin" && build/"$bin"
 }
 ppq_parse()
 {
 #!/bin/sh
 
-config__package__name=
-config__package__version=
-config__package__bin=
-config__package__lib=
-
-search="config__$1"
-
-current_depth="${current_depth:-0}"
-names0=config
-current_name="${current_name:-$names0}"
-
-start_new_obj() {
-  [ "$current_name" = "$search" ] && return 1
-  current_depth=$(expr "  $1" : '[ \t]*')
-  raw_name=$(expr "$1" : '.*\[\(.*\)\]')
-  name=$(echo "$raw_name" | tr -c '[:alnum:]_\n' '_')
-  eval "names$current_depth=\"\${names$(("$current_depth" - 2))}__$name\""
-  current_name=$(eval echo "\"\$names$current_depth\"")
+awk 'BEGIN {
+  FS=" *= *"
 }
 
-append_field() {
-  name=$(expr "$1" : '\s*\([^ ]*\)\s*=' | tr -c '[:alnum:]_\n' '_')
-  value=$(expr "$1" : '.*=\s*\(.*\)\s*')
-  #echo "${current_name}__$name='$value'"
-  eval "${current_name}__$name='$value'"
-  [ "${current_name}__$name" = "$search" ] && return 1 || return 0
+/^ *$/ {
+  next;
 }
 
-while IFS="" read -r line
-do
-  case "$(expr "$line" : '\s*\(.*\)')" in
-    ''|\#*);;
-    \[*\]) start_new_obj "$line" || break;;
-    *) append_field "$line" || break;;
-  esac
-done
+/^ *#.*$/ {
+  next;
+}
+
+NF>1 {
+  match($1, /^ */);
+  $1=substr($1, RLENGTH+1);
+  print "set "names[depth]"#"$1" "$2;
+  next;
+}
+
+NF<=1 && match($0,/\[.*\]/) {
+  name=substr($0, RSTART+1, RLENGTH-2);
+  match($0, /^ */);
+  depth=RLENGTH;
+  names[depth]=names[depth-2]"#"name;
+  print "append "names[depth-2]" "names[depth]
+  next;
+}
+
+{
+  print "Syntax error at line"NR;
+  print "\""$0"\""
+  exit 1;
+}'
 }
 ppq_test()
 {
@@ -167,49 +163,48 @@ ppq_lists()
 {
 #!/bin/sh
 
-ppq_parse package < package.ppq
-
-projname="$config__package__name"
-version="$config__package__version"
-lib="$config__package__lib"
-bin="$config__package__bin"
+config="$(ppq_parse package < package.ppq)"
+name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
+version="$(echo "$config" | grep '^set #package#version ' | cut -d' ' -f3)"
+lib="$(echo "$config" | grep '^set #package#lib ' | cut -d' ' -f3)"
+bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
 
 echo "cmake_minimum_required(VERSION 3.1)"
 echo ""
-echo "project($projname VERSION $version LANGUAGES CXX)"
+echo "project($name VERSION $version LANGUAGES CXX)"
 echo ""
 echo "add_library($lib)"
 echo "target_include_directories($lib PUBLIC"
 echo "    \$<BUILD_INTERFACE:\${CMAKE_CURRENT_SOURCE_DIR}/include>"
 echo "    \$<INSTALL_INTERFACE:include>)"
 echo "target_sources($lib PRIVATE"
-find src/"$projname" -type f -name '*.cpp' -exec echo "    {}" ';'
+find src/"$name" -type f -name '*.cpp' -exec echo "    {}" ';'
 echo "    )"
 echo ""
-echo "add_executable(${projname}-bin src/main.cpp)"
-echo "set_target_properties(${projname}-bin"
+echo "add_executable(${name}-bin src/main.cpp)"
+echo "set_target_properties(${name}-bin"
 echo "    PROPERTIES OUTPUT_NAME $bin)"
-echo "target_link_libraries(${projname}-bin"
+echo "target_link_libraries(${name}-bin"
 echo "    $lib)"
 echo ""
-echo "install(TARGETS $lib ${projname}-bin"
-echo "    EXPORT ${projname}-config"
+echo "install(TARGETS $lib ${name}-bin"
+echo "    EXPORT ${name}-config"
 echo "    ARCHIVE DESTINATION lib"
 echo "    LIBRARY DESTINATION lib"
 echo "    RUNTIME DESTINATION bin)"
 echo ""
-echo "install(EXPORT ${projname}-config"
-echo "    NAMESPACE ${projname}"
-echo "    DESTINATION lib/cmake/$projname)"
+echo "install(EXPORT ${name}-config"
+echo "    NAMESPACE ${name}"
+echo "    DESTINATION lib/cmake/$name)"
 echo ""
 echo "include(CMakePackageConfigHelpers)"
 echo ""
 echo "write_basic_package_version_file("
-echo "    \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
+echo "    \${CMAKE_CURRENT_BINARY_DIR}/${name}-config-version.cmake"
 echo "    COMPATIBILITY SameMajorVersion)"
 echo ""
-echo "install(FILES \${CMAKE_CURRENT_BINARY_DIR}/${projname}-config-version.cmake"
-echo "    DESTINATION lib/cmake/$projname)"
+echo "install(FILES \${CMAKE_CURRENT_BINARY_DIR}/${name}-config-version.cmake"
+echo "    DESTINATION lib/cmake/$name)"
 echo "install(DIRECTORY \${CMAKE_CURRENT_SOURCE_DIR}/include/"
 echo "    DESTINATION include)"
 echo ""
@@ -247,16 +242,14 @@ ppq_test_lists()
 {
 #!/bin/sh
 
-ppq_parse package__name < package.ppq
+name="$(ppq_parse < package.ppq | grep '^set #package#name ' | cut -d' ' -f3)"
 
-projname="$config__package__name"
-
-echo "set(${projname}_unit_tests_count 0)"
+echo "set(${name}_unit_tests_count 0)"
 echo ""
 echo "function(add_unit_test source_file)"
-echo "  math(EXPR tmp \"\${${projname}_unit_tests_count} + 1\")"
-echo "  set(${projname}_unit_tests_count \${tmp} PARENT_SCOPE)"
-echo "  set(test_binary \"${projname}_unit_test\${${projname}_unit_tests_count}\")"
+echo "  math(EXPR tmp \"\${${name}_unit_tests_count} + 1\")"
+echo "  set(${name}_unit_tests_count \${tmp} PARENT_SCOPE)"
+echo "  set(test_binary \"${name}_unit_test\${${name}_unit_tests_count}\")"
 echo ""
 echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
 echo "  add_test([build]\${source_file}"

@@ -1,8 +1,7 @@
 #!/bin/sh
 
-{
-  ppq_parse package__bin
-  [ -z "$config__package__name" ] && ppq_parse package__name
-} < package.ppq
+config="$(ppq_parse < package.ppq)"
+name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
+bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
 
-ppq_build --target "${config__package__name}-bin" && build/"$config__package__bin"
+ppq_build --target "${name}-bin" && build/"$bin"

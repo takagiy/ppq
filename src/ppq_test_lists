@@ -1,15 +1,13 @@
 #!/bin/sh
 
-ppq_parse package__name < package.ppq
+name="$(ppq_parse < package.ppq | grep '^set #package#name ' | cut -d' ' -f3)"
 
-projname="$config__package__name"
-
-echo "set(${projname}_unit_tests_count 0)"
+echo "set(${name}_unit_tests_count 0)"
 echo ""
 echo "function(add_unit_test source_file)"
-echo "  math(EXPR tmp \"\${${projname}_unit_tests_count} + 1\")"
-echo "  set(${projname}_unit_tests_count \${tmp} PARENT_SCOPE)"
-echo "  set(test_binary \"${projname}_unit_test\${${projname}_unit_tests_count}\")"
+echo "  math(EXPR tmp \"\${${name}_unit_tests_count} + 1\")"
+echo "  set(${name}_unit_tests_count \${tmp} PARENT_SCOPE)"
+echo "  set(test_binary \"${name}_unit_test\${${name}_unit_tests_count}\")"
 echo ""
 echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
 echo "  add_test([build]\${source_file}"

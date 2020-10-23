@@ -1,38 +1,35 @@
 #!/bin/sh
 
-config__package__name=
-config__package__version=
-config__package__bin=
-config__package__lib=
-
-search="config__$1"
-
-current_depth="${current_depth:-0}"
-names0=config
-current_name="${current_name:-$names0}"
-
-start_new_obj() {
-  [ "$current_name" = "$search" ] && return 1
-  current_depth=$(expr "  $1" : '[ \t]*')
-  raw_name=$(expr "$1" : '.*\[\(.*\)\]')
-  name=$(echo "$raw_name" | tr -c '[:alnum:]_\n' '_')
-  eval "names$current_depth=\"\${names$(("$current_depth" - 2))}__$name\""
-  current_name=$(eval echo "\"\$names$current_depth\"")
+awk 'BEGIN {
+  FS=" *= *"
 }
 
-append_field() {
-  name=$(expr "$1" : '\s*\([^ ]*\)\s*=' | tr -c '[:alnum:]_\n' '_')
-  value=$(expr "$1" : '.*=\s*\(.*\)\s*')
-  #echo "${current_name}__$name='$value'"
-  eval "${current_name}__$name='$value'"
-  [ "${current_name}__$name" = "$search" ] && return 1 || return 0
+/^ *$/ {
+  next;
 }
 
-while IFS="" read -r line
-do
-  case "$(expr "$line" : '\s*\(.*\)')" in
-    ''|\#*);;
-    \[*\]) start_new_obj "$line" || break;;
-    *) append_field "$line" || break;;
-  esac
-done
+/^ *#.*$/ {
+  next;
+}
+
+NF>1 {
+  match($1, /^ */);
+  $1=substr($1, RLENGTH+1);
+  print "set "names[depth]"#"$1" "$2;
+  next;
+}
+
+NF<=1 && match($0,/\[.*\]/) {
+  name=substr($0, RSTART+1, RLENGTH-2);
+  match($0, /^ */);
+  depth=RLENGTH;
+  names[depth]=names[depth-2]"#"name;
+  print "append "names[depth-2]" "names[depth]
+  next;
+}
+
+{
+  print "Syntax error at line"NR;
+  print "\""$0"\""
+  exit 1;
+}'
