@@ -3,7 +3,7 @@ ppq_install()
 {
 #!/bin/sh
 
-dest=
+dest=~/.ppq
 
 while [ $# -ne 0 ]
 do
@@ -236,6 +236,12 @@ do
 done
 
 mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target "$target"
+}
+ppq_deps_install()
+{
+#!/bin/sh
+
+:
 }
 ppq_test_lists()
 {
