@@ -1,3 +1,36 @@
 #!/bin/sh
 
-:
+mkdir -p cplusplus_modules
+
+ppq_parse < package.ppq | awk '
+BEGIN {
+  FS="="
+  ndep=0
+}
+
+$1=="set" && $2 ~ /#dependencies#.*/ {
+  field[$2]=$3;
+  next
+}
+
+$1=="append" && $2=="#dependencies" {
+  deps[ndep++]=$3;
+  next
+}
+
+END {
+  for(dep in deps) {
+    d = deps[dep];
+    name = d;
+    sub(/^#dependencies#/, "", name);
+    user = field[d "#location#ref"];
+    sub(/\/.+$/, "", user);
+    cmd = "mkdir -p cplusplus_modules/" user;
+    print cmd;
+    system(cmd);
+    cmd = "git -C cplusplus_modules/" user " clone https://github.com/" field[d "#location#ref"] ".git";
+    print cmd;
+    system(cmd);
+  }
+}
+'

@@ -78,4 +78,4 @@ mkdir -p include/"$projname"
 ppq_lists > CMakeLists.txt
 ppq_test_lists > test/CMakeLists.txt
 
-mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+mkdir -p build && ppq_build --config-only

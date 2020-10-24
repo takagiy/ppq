@@ -21,8 +21,8 @@ ppq_run()
 #!/bin/sh
 
 config="$(ppq_parse < package.ppq)"
-name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
-bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
+name="$(echo "$config" | grep '^set=#package#name=' | cut -d'=' -f3)"
+bin="$(echo "$config" | grep '^set=#package#bin=' | cut -d'=' -f3)"
 
 ppq_build --target "${name}-bin" && build/"$bin"
 }
@@ -45,7 +45,7 @@ awk 'BEGIN {
 NF>1 {
   match($1, /^ */);
   $1=substr($1, RLENGTH+1);
-  print "set "names[depth]"#"$1" "$2;
+  print "set="names[depth]"#"$1"="$2;
   next;
 }
 
@@ -54,7 +54,7 @@ NF<=1 && match($0,/\[.*\]/) {
   match($0, /^ */);
   depth=RLENGTH;
   names[depth]=names[depth-2]"#"name;
-  print "append "names[depth-2]" "names[depth]
+  print "append="names[depth-2]"="names[depth]
   next;
 }
 
@@ -74,7 +74,7 @@ ppq_deps_list()
 {
 #!/bin/sh
 
-ppq_parse < package.ppq | grep '^append #dependencies ' | cut -d' ' -f3 | sed 's/^#dependencies#//'
+ppq_parse < package.ppq | grep '^append=#dependencies=' | cut -d'=' -f3 | sed 's/^#dependencies#//'
 }
 ppq_help()
 {
@@ -163,17 +163,17 @@ mkdir -p include/"$projname"
 ppq_lists > CMakeLists.txt
 ppq_test_lists > test/CMakeLists.txt
 
-mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+mkdir -p build && ppq_build --config-only
 }
 ppq_lists()
 {
 #!/bin/sh
 
 config="$(ppq_parse package < package.ppq)"
-name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
-version="$(echo "$config" | grep '^set #package#version ' | cut -d' ' -f3)"
-lib="$(echo "$config" | grep '^set #package#lib ' | cut -d' ' -f3)"
-bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
+name="$(echo "$config" | grep '^set=#package#name=' | cut -d'=' -f3)"
+version="$(echo "$config" | grep '^set=#package#version=' | cut -d'=' -f3)"
+lib="$(echo "$config" | grep '^set=#package#lib=' | cut -d'=' -f3)"
+bin="$(echo "$config" | grep '^set=#package#bin=' | cut -d'=' -f3)"
 
 echo "cmake_minimum_required(VERSION 3.1)"
 echo ""
@@ -226,29 +226,71 @@ ppq_build()
 #!/bin/sh
 
 target=all
+build_type=Release
+build_shared_libs=OFF
+config_only=
 
 while [ $# -ne 0 ]
 do
   case "$1" in
     -t | --target) shift;target="$1";;
+    --release) build_type=Release;;
+    --shared-libs) build_shared_libs=ON;;
+    --config-only) config_only=yes;;
     *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
   esac
   shift
 done
 
-mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target "$target"
+mkdir -p build && cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE="$build_type" \
+  -DBUILD_SHARED_LIBS="$build_shared_libs" && \
+  [ -z "$config_only" ] && cmake --build build --target "$target"
 }
 ppq_deps_install()
 {
 #!/bin/sh
 
-:
+mkdir -p cplusplus_modules
+
+ppq_parse < package.ppq | awk '
+BEGIN {
+  FS="="
+  ndep=0
+}
+
+$1=="set" && $2 ~ /#dependencies#.*/ {
+  field[$2]=$3;
+  next
+}
+
+$1=="append" && $2=="#dependencies" {
+  deps[ndep++]=$3;
+  next
+}
+
+END {
+  for(dep in deps) {
+    d = deps[dep];
+    name = d;
+    sub(/^#dependencies#/, "", name);
+    user = field[d "#location#ref"];
+    sub(/\/.+$/, "", user);
+    cmd = "mkdir -p cplusplus_modules/" user;
+    print cmd;
+    system(cmd);
+    cmd = "git -C cplusplus_modules/" user " clone https://github.com/" field[d "#location#ref"] ".git";
+    print cmd;
+    system(cmd);
+  }
+}
+'
 }
 ppq_test_lists()
 {
 #!/bin/sh
 
-name="$(ppq_parse < package.ppq | grep '^set #package#name ' | cut -d' ' -f3)"
+name="$(ppq_parse < package.ppq | grep '^set=#package#name=' | cut -d'=' -f3)"
 
 echo "set(${name}_unit_tests_count 0)"
 echo ""

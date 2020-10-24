@@ -1,14 +1,23 @@
 #!/bin/sh
 
 target=all
+build_type=Release
+build_shared_libs=OFF
+config_only=
 
 while [ $# -ne 0 ]
 do
   case "$1" in
     -t | --target) shift;target="$1";;
+    --release) build_type=Release;;
+    --shared-libs) build_shared_libs=ON;;
+    --config-only) config_only=yes;;
     *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
   esac
   shift
 done
 
-mkdir -p build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target "$target"
+mkdir -p build && cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE="$build_type" \
+  -DBUILD_SHARED_LIBS="$build_shared_libs" && \
+  [ -z "$config_only" ] && cmake --build build --target "$target"

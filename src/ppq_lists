@@ -1,10 +1,10 @@
 #!/bin/sh
 
 config="$(ppq_parse package < package.ppq)"
-name="$(echo "$config" | grep '^set #package#name ' | cut -d' ' -f3)"
-version="$(echo "$config" | grep '^set #package#version ' | cut -d' ' -f3)"
-lib="$(echo "$config" | grep '^set #package#lib ' | cut -d' ' -f3)"
-bin="$(echo "$config" | grep '^set #package#bin ' | cut -d' ' -f3)"
+name="$(echo "$config" | grep '^set=#package#name=' | cut -d'=' -f3)"
+version="$(echo "$config" | grep '^set=#package#version=' | cut -d'=' -f3)"
+lib="$(echo "$config" | grep '^set=#package#lib=' | cut -d'=' -f3)"
+bin="$(echo "$config" | grep '^set=#package#bin=' | cut -d'=' -f3)"
 
 echo "cmake_minimum_required(VERSION 3.1)"
 echo ""

@@ -15,7 +15,7 @@ awk 'BEGIN {
 NF>1 {
   match($1, /^ */);
   $1=substr($1, RLENGTH+1);
-  print "set "names[depth]"#"$1" "$2;
+  print "set="names[depth]"#"$1"="$2;
   next;
 }
 
@@ -24,7 +24,7 @@ NF<=1 && match($0,/\[.*\]/) {
   match($0, /^ */);
   depth=RLENGTH;
   names[depth]=names[depth-2]"#"name;
-  print "append "names[depth-2]" "names[depth]
+  print "append="names[depth-2]"="names[depth]
   next;
 }
 

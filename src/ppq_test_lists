@@ -1,6 +1,6 @@
 #!/bin/sh
 
-name="$(ppq_parse < package.ppq | grep '^set #package#name ' | cut -d' ' -f3)"
+name="$(ppq_parse < package.ppq | grep '^set=#package#name=' | cut -d'=' -f3)"
 
 echo "set(${name}_unit_tests_count 0)"
 echo ""
