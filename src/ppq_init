@@ -38,6 +38,7 @@ echo "Creating project '$projname'..." 1>&2
   echo "    [location]"
   echo "    type = github"
   echo "    ref = catchorg/Catch2"
+  echo "    pin = v2.13.2"
 } > package.ppq
 
 mkdir -p test

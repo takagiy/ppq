@@ -33,6 +33,11 @@ END {
     cmd = "git -C cplusplus_modules/" user " clone https://github.com/" field[d "#location#ref"] ".git";
     print cmd;
     system(cmd);
+    if((d "#location#pin") in field) {
+      cmd = "sh -c \"cd cplusplus_modules/" field[d "#location#ref"] " && git checkout " field[d "#location#pin"] "\"";
+      print cmd;
+      system(cmd);
+    }
     cmd = "sh -c \"cd cplusplus_modules/" field[d "#location#ref"] " && " ppq " install\""
     print cmd;
     system(cmd);

@@ -133,6 +133,7 @@ echo "Creating project '$projname'..." 1>&2
   echo "    [location]"
   echo "    type = github"
   echo "    ref = catchorg/Catch2"
+  echo "    pin = v2.13.2"
 } > package.ppq
 
 mkdir -p test
@@ -290,6 +291,7 @@ if [ -e package.ppq ]
 then
   ppq_lists > CMakeLists.txt
   ppq_test_lists > test/CMakeLists.txt
+  ppq_deps_install
 fi
 
 mkdir -p build && \
@@ -340,6 +342,11 @@ END {
     cmd = "git -C cplusplus_modules/" user " clone https://github.com/" field[d "#location#ref"] ".git";
     print cmd;
     system(cmd);
+    if((d "#location#pin") in field) {
+      cmd = "sh -c \"cd cplusplus_modules/" field[d "#location#ref"] " && git checkout " field[d "#location#pin"] "\"";
+      print cmd;
+      system(cmd);
+    }
     cmd = "sh -c \"cd cplusplus_modules/" field[d "#location#ref"] " && " ppq " install\""
     print cmd;
     system(cmd);

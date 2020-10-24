@@ -25,6 +25,7 @@ if [ -e package.ppq ]
 then
   ppq_lists > CMakeLists.txt
   ppq_test_lists > test/CMakeLists.txt
+  ppq_deps_install
 fi
 
 mkdir -p build && \
