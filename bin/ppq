@@ -257,6 +257,9 @@ do
   shift
 done
 
+ppq_lists > CMakeLists.txt
+ppq_test_lists > test/CMakeLists.txt
+
 mkdir -p build && cmake -S . -B build \
   -DCMAKE_BUILD_TYPE="$build_type" \
   -DBUILD_SHARED_LIBS="$build_shared_libs" \
