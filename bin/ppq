@@ -165,6 +165,12 @@ ppq_test_lists > test/CMakeLists.txt
 
 mkdir -p build && ppq_build --config-only
 }
+ppq_deps_list_exports()
+{
+#!/bin/sh
+
+ppq_parse < package.ppq | grep '^set=#dependencies#[^#]*#export=' | cut -d'=' -f3
+}
 ppq_lists()
 {
 #!/bin/sh
@@ -228,6 +234,7 @@ ppq_build()
 target=all
 build_type=Release
 build_shared_libs=OFF
+build_testing=ON
 config_only=
 
 while [ $# -ne 0 ]
@@ -236,6 +243,7 @@ do
     -t | --target) shift;target="$1";;
     --release) build_type=Release;;
     --shared-libs) build_shared_libs=ON;;
+    --no-test) build_testing=OFF;;
     --config-only) config_only=yes;;
     *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
   esac
@@ -244,7 +252,8 @@ done
 
 mkdir -p build && cmake -S . -B build \
   -DCMAKE_BUILD_TYPE="$build_type" \
-  -DBUILD_SHARED_LIBS="$build_shared_libs" && \
+  -DBUILD_SHARED_LIBS="$build_shared_libs" \
+  -DBUILD_TESTING="$build_testing" && \
   [ -z "$config_only" ] && cmake --build build --target "$target"
 }
 ppq_deps_install()
