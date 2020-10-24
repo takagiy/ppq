@@ -4,7 +4,7 @@ mkdir -p cplusplus_modules
 
 ppq_path="$(cd "$(dirname -- "$(command -v -- "$0")")" && pwd -P)/$(basename -- "$(command -v -- "$0")")"
 
-ppq_parse < package.ppq | awk -v ppq="$ppq_path" '
+ppq_parse < package.ppq | sed 's/=#test_dependencies=/=#dependencies=/g;s/=#test_dependencies#/=#dependencies#/' | awk -v ppq="$ppq_path" '
 BEGIN {
   FS="="
   ndep=0

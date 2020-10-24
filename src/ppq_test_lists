@@ -2,6 +2,8 @@
 
 name="$(ppq_parse < package.ppq | grep '^set=#package#name=' | cut -d'=' -f3)"
 
+ppq_deps_list --test | sed 's/^/find_package(/;s/$/ CONFIG REQUIRED)/'
+echo ""
 echo "set(${name}_unit_tests_count 0)"
 echo ""
 echo "function(add_unit_test source_file)"
@@ -10,6 +12,9 @@ echo "  set(${name}_unit_tests_count \${tmp} PARENT_SCOPE)"
 echo "  set(test_binary \"${name}_unit_test\${${name}_unit_tests_count}\")"
 echo ""
 echo "  add_executable(\${test_binary} EXCLUDE_FROM_ALL \"\${source_file}\")"
+echo "  target_link_libraries(\${test_binary} PRIVATE"
+ppq_deps_list_exports --test | sed 's/^/      /'
+echo "      )"
 echo "  add_test([build]\${source_file}"
 echo "    \${CMAKE_COMMAND} --build \${CMAKE_BINARY_DIR} --target \${test_binary})"
 echo ""

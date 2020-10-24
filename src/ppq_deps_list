@@ -1,3 +1,13 @@
 #!/bin/sh
 
-ppq_parse < package.ppq | grep '^append=#dependencies=' | cut -d'=' -f3 | sed 's/^#dependencies#//'
+q="dependencies"
+
+while [ $# -ne 0 ]
+do
+  case "$1" in
+    --test) q="test_dependencies";;
+  esac
+  shift
+done
+
+ppq_parse < package.ppq | grep '^append=#'"$q"'=' | cut -d'=' -f3 | sed 's/^#'"$q"'#//'

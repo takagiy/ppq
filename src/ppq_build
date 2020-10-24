@@ -33,6 +33,7 @@ mkdir -p build && \
     cmake -S . -B build \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DBUILD_SHARED_LIBS="$build_shared_libs" \
-        -DBUILD_TESTING="$build_testing"
+        -DBUILD_TESTING="$build_testing" \
+        -DCMAKE_PREFIX_PATH="~/.ppq/usr/local"
   fi && \
   [ -z "$config_only" ] && cmake --build build --target "$target"
