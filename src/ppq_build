@@ -19,8 +19,11 @@ do
   shift
 done
 
-ppq_lists > CMakeLists.txt
-ppq_test_lists > test/CMakeLists.txt
+if [ -e package.ppq ]
+then
+  ppq_lists > CMakeLists.txt
+  ppq_test_lists > test/CMakeLists.txt
+fi
 
 mkdir -p build && cmake -S . -B build \
   -DCMAKE_BUILD_TYPE="$build_type" \

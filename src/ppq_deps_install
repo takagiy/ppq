@@ -2,7 +2,9 @@
 
 mkdir -p cplusplus_modules
 
-ppq_parse < package.ppq | awk '
+ppq_path="$(cd "$(dirname -- "$(command -v -- "$0")")" && pwd -P)/$(basename -- "$(command -v -- "$0")")"
+
+ppq_parse < package.ppq | awk -v ppq="$ppq_path" '
 BEGIN {
   FS="="
   ndep=0
@@ -29,6 +31,9 @@ END {
     print cmd;
     system(cmd);
     cmd = "git -C cplusplus_modules/" user " clone https://github.com/" field[d "#location#ref"] ".git";
+    print cmd;
+    system(cmd);
+    cmd = "sh -c \"cd cplusplus_modules/" field[d "#location#ref"] " && " ppq " install\""
     print cmd;
     system(cmd);
   }
