@@ -4,6 +4,7 @@ target=all
 build_type=Release
 build_shared_libs=OFF
 build_testing=ON
+skip_config=
 config_only=
 
 while [ $# -ne 0 ]
@@ -13,6 +14,7 @@ do
     --release) build_type=Release;;
     --shared-libs) build_shared_libs=ON;;
     --no-test) build_testing=OFF;;
+    --skip-config) skip_config=yes;;
     --config-only) config_only=yes;;
     *) echo "error: Invalid argument '$1'" 1>&2;exit 1;;
   esac
@@ -25,8 +27,12 @@ then
   ppq_test_lists > test/CMakeLists.txt
 fi
 
-mkdir -p build && cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE="$build_type" \
-  -DBUILD_SHARED_LIBS="$build_shared_libs" \
-  -DBUILD_TESTING="$build_testing" && \
+mkdir -p build && \
+  if [ ! -e build/CMakeCache.txt ] || [ -z "$skip_config" ]
+  then
+    cmake -S . -B build \
+        -DCMAKE_BUILD_TYPE="$build_type" \
+        -DBUILD_SHARED_LIBS="$build_shared_libs" \
+        -DBUILD_TESTING="$build_testing"
+  fi && \
   [ -z "$config_only" ] && cmake --build build --target "$target"
